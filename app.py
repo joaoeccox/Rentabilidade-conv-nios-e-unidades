@@ -9,11 +9,12 @@ from googleapiclient.http import MediaFileUpload
 
 def analisar_csv(file_content, tipo, impostos):
     """
-    Função para processar o CSV:
-      - Decodifica o conteúdo usando 'latin-1'.
-      - Separa as linhas e ignora o cabeçalho.
-      - Faz split manual usando ';' e converte o valor da segunda coluna.
-      - Aplica desconto de 9,86% se 'impostos' for True.
+    Processa o CSV:
+      - Decodifica o conteúdo usando 'latin-1'
+      - Separa as linhas (ignorando o cabeçalho)
+      - Faz split manual com ';' e tenta converter o valor da segunda coluna
+      - Se a conversão falhar, ignora a linha (sem exibir mensagem)
+      - Aplica um desconto de 9,86% se 'impostos' for True
     """
     decoded = file_content.decode('latin-1')
     linhas = decoded.splitlines()
@@ -28,23 +29,29 @@ def analisar_csv(file_content, tipo, impostos):
         if len(partes) < 2:
             continue
         try:
-            valor_str = partes[1].strip('"').replace(",", ".")
+            valor_str = partes[1].strip('"').replace(",", ".").strip()
             valor = float(valor_str)
             total += valor
-        except Exception as e:
-            st.write(f"Erro ao converter '{partes[1]}': {e}")
+        except Exception:
+            # Ignora linhas que não possam ser convertidas para float
+            continue
+
     if impostos:
         total *= 0.9014  # Aplica o desconto de 9,86%
     return f"Análise: {tipo}\nTotal da produção: R$ {total:.2f}"
 
 def upload_to_drive(file_path, folder_id):
     """
-    Função para fazer o upload do arquivo CSV para o Google Drive.
+    Faz o upload do arquivo CSV para o Google Drive.
     Utiliza as credenciais da conta de serviço a partir do arquivo JSON.
     """
+    cred_file = 'rentabilidadeapp-f242aaa02497.json'
+    if not os.path.exists(cred_file):
+        raise Exception(f"Arquivo de credenciais '{cred_file}' não encontrado. Por favor, faça o upload do arquivo de credenciais na raiz do repositório.")
+
     try:
         creds = service_account.Credentials.from_service_account_file(
-            'rentabilidadeapp-f242aaa02497.json',  # Certifique-se de que o nome está correto
+            cred_file,
             scopes=['https://www.googleapis.com/auth/drive.file']
         )
         service = build('drive', 'v3', credentials=creds)
