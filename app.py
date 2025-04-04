@@ -12,8 +12,8 @@ def analisar_csv(file_content, tipo, impostos):
     Processa o CSV:
       - Decodifica o conteúdo usando 'latin-1'
       - Separa as linhas (ignorando o cabeçalho)
-      - Faz split manual com ';' e tenta converter o valor da segunda coluna
-      - Se a conversão falhar, ignora a linha (sem exibir mensagem)
+      - Utiliza a quarta coluna (índice 3) que contém o valor numérico ("Bruto Fat.")
+      - Ignora linhas que não possam ser convertidas para float
       - Aplica um desconto de 9,86% se 'impostos' for True
     """
     decoded = file_content.decode('latin-1')
@@ -26,14 +26,14 @@ def analisar_csv(file_content, tipo, impostos):
         if not linha or "TOTAL" in linha.upper():
             continue
         partes = linha.split(";")
-        if len(partes) < 2:
+        if len(partes) < 4:
             continue
         try:
-            valor_str = partes[1].strip('"').replace(",", ".").strip()
+            # Usa a quarta coluna (índice 3) para o valor
+            valor_str = partes[3].strip('"').replace(",", ".").strip()
             valor = float(valor_str)
             total += valor
         except Exception:
-            # Ignora linhas que não possam ser convertidas para float
             continue
 
     if impostos:
@@ -48,14 +48,12 @@ def upload_to_drive(file_path, folder_id):
     cred_file = 'rentabilidadeapp-f242aaa02497.json'
     if not os.path.exists(cred_file):
         raise Exception(f"Arquivo de credenciais '{cred_file}' não encontrado. Por favor, faça o upload do arquivo de credenciais na raiz do repositório.")
-
     try:
         creds = service_account.Credentials.from_service_account_file(
             cred_file,
             scopes=['https://www.googleapis.com/auth/drive.file']
         )
         service = build('drive', 'v3', credentials=creds)
-
         file_metadata = {
             'name': os.path.basename(file_path),
             'parents': [folder_id]
@@ -80,8 +78,7 @@ impostos = st.checkbox("Incluir impostos no cálculo?", value=True)
 uploaded_file = st.file_uploader("Envie a planilha de produção (.csv)", type="csv")
 
 if uploaded_file is not None:
-    st.write("### Preview do arquivo:")
-    st.text(uploaded_file.getvalue().decode('latin-1'))
+    st.write("Arquivo carregado com sucesso.")
     
     if st.button("Processar e Enviar"):
         # Lê o conteúdo do arquivo em bytes
