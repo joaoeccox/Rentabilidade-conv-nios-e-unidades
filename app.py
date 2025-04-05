@@ -6,12 +6,14 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 
-# Configurações
-CREDENTIALS_FILE = "credentials.json"  # Arquivo de credenciais renomeado
-PASTA_UNIDADE_ID = "12zGKH3GKxU4xagjEIj6aLXQzteFIJDFC"
+# CONFIGURAÇÕES
+CREDENTIALS_FILE = "credentials.json"  # O arquivo de credenciais, verificado e renomeado
+# IDs das pastas no Google Drive
+# Para convênio (produção e tabela) usamos:
 PASTA_CONVENIO_ID = "16y9sqf-9vO6GMZVTCS8MnBlVtpAmOPYW"
+# Para unidade, usamos (planilha de custo fixo da unidade)
+PASTA_UNIDADE_ID = "1K1tsKaXKQ4iq_75Y1dzK5ESl_0Wo8a8W"
 
-# Conectar ao Google Drive com um escopo mais amplo
 def conectar_drive():
     if not os.path.exists(CREDENTIALS_FILE):
         st.error(f"Arquivo de credenciais '{CREDENTIALS_FILE}' não encontrado.")
@@ -27,7 +29,6 @@ def conectar_drive():
         st.error(f"Erro ao conectar ao Google Drive: {e}")
         return None
 
-# Lista arquivos CSV em uma pasta específica
 def listar_arquivos(service, folder_id):
     try:
         results = service.files().list(
@@ -40,7 +41,6 @@ def listar_arquivos(service, folder_id):
         st.error(f"Erro ao listar arquivos: {e}")
         return []
 
-# Baixa o arquivo CSV dado seu ID e retorna um DataFrame
 def baixar_csv(service, file_id):
     try:
         request = service.files().get_media(fileId=file_id)
@@ -56,7 +56,6 @@ def baixar_csv(service, file_id):
         st.error(f"Erro ao baixar arquivo: {e}")
         return None
 
-# Calcula o total a partir da coluna "Bruto Fat."
 def calcular_faturamento(df):
     if "Bruto Fat." not in df.columns:
         st.warning("Coluna 'Bruto Fat.' não encontrada no CSV.")
@@ -70,16 +69,30 @@ def calcular_faturamento(df):
         st.error(f"Erro ao calcular faturamento: {e}")
         return 0.0
 
-# Interface do app
+# Interface do App no Streamlit
 st.title("📊 App de Rentabilidade - Laboratório João Paulo")
-st.write("Selecione o tipo de produção e escolha um arquivo CSV do Google Drive para análise.")
+st.write("Selecione o tipo de análise, insira a alíquota de impostos (em %) se aplicável e escolha um arquivo CSV do Google Drive.")
 
-tipo = st.selectbox("Tipo de Produção", ["Convênio", "Unidade"])
+# Seleção do tipo de análise
+tipo = st.selectbox("Tipo de Análise", ["Convênio Produção", "Convênio Tabela", "Unidade"])
+
+# Caixa de texto para inserir a alíquota de impostos (em %). Se vazio, não aplica impostos.
+aliquota_input = st.text_input("Digite a alíquota de impostos (%) (deixe vazio para não aplicar)", value="9.86")
+try:
+    aliquota = float(aliquota_input) / 100 if aliquota_input.strip() != "" else 0.0
+except:
+    st.error("Alíquota de impostos inválida.")
+    aliquota = 0.0
 
 service = conectar_drive()
 
 if service:
-    pasta_id = PASTA_CONVENIO_ID if tipo.lower() == "convênio" else PASTA_UNIDADE_ID
+    # Define a pasta a ser usada com base no tipo de análise
+    if tipo.lower().startswith("convênio"):
+        pasta_id = PASTA_CONVENIO_ID
+    else:
+        pasta_id = PASTA_UNIDADE_ID
+
     arquivos = listar_arquivos(service, pasta_id)
     
     if arquivos:
@@ -90,10 +103,15 @@ if service:
             if file_id:
                 df = baixar_csv(service, file_id)
                 if df is not None:
-                    st.subheader("Prévia dos dados (primeiras 10 linhas):")
+                    st.subheader("Prévia dos Dados (Primeiras 10 Linhas):")
                     st.dataframe(df.head(10))
                     total = calcular_faturamento(df)
-                    st.success(f"Total da produção (Bruto Fat.): R$ {total:,.2f}")
+                    # Se a alíquota foi informada, aplica sobre o valor faturado
+                    if aliquota > 0:
+                        total_com_impostos = total * (1 - aliquota)
+                        st.success(f"Total da produção (Bruto Fat.) sem impostos: R$ {total_com_impostos:,.2f}")
+                    else:
+                        st.success(f"Total da produção (Bruto Fat.): R$ {total:,.2f}")
             else:
                 st.error("Arquivo não encontrado.")
     else:
