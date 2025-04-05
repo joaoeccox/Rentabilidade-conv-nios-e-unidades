@@ -1,107 +1,100 @@
 import streamlit as st
 import os
 import tempfile
-
-# Importa as bibliotecas para acesso à API do Google Drive
+import pandas as pd
+from io import BytesIO
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
+from googleapiclient.http import MediaIoBaseDownload
 
-def analisar_csv(file_content, tipo, impostos):
-    """
-    Processa o CSV:
-      - Decodifica o conteúdo usando 'latin-1'
-      - Separa as linhas (ignorando o cabeçalho)
-      - Utiliza a quarta coluna (índice 3) que contém o valor numérico ("Bruto Fat.")
-      - Ignora linhas que não possam ser convertidas para float
-      - Aplica um desconto de 9,86% se 'impostos' for True
-    """
-    decoded = file_content.decode('latin-1')
-    linhas = decoded.splitlines()
-    total = 0.0
+# Configurações
+CREDENTIALS_FILE = "credentials.json"  # Arquivo de credenciais renomeado
+PASTA_UNIDADE_ID = "12zGKH3GKxU4xagjEIj6aLXQzteFIJDFC"
+PASTA_CONVENIO_ID = "16y9sqf-9vO6GMZVTCS8MnBlVtpAmOPYW"
 
-    # Pula o cabeçalho (primeira linha)
-    for linha in linhas[1:]:
-        linha = linha.strip()
-        if not linha or "TOTAL" in linha.upper():
-            continue
-        partes = linha.split(";")
-        if len(partes) < 4:
-            continue
-        try:
-            # Usa a quarta coluna (índice 3) para o valor
-            valor_str = partes[3].strip('"').replace(",", ".").strip()
-            valor = float(valor_str)
-            total += valor
-        except Exception:
-            continue
-
-    if impostos:
-        total *= 0.9014  # Aplica o desconto de 9,86%
-    return f"Análise: {tipo}\nTotal da produção: R$ {total:.2f}"
-
-def upload_to_drive(file_path, folder_id):
-    """
-    Faz o upload do arquivo CSV para o Google Drive.
-    Utiliza as credenciais da conta de serviço a partir do arquivo JSON.
-    """
-    # Aqui usamos o nome do arquivo JSON conforme você informou
-    cred_file = 'credentials.json'
-    if not os.path.exists(cred_file):
-        raise Exception(f"Arquivo de credenciais '{cred_file}' não encontrado. Por favor, faça o upload do arquivo de credenciais na raiz do repositório.")
+def conectar_drive():
+    if not os.path.exists(CREDENTIALS_FILE):
+        st.error(f"Arquivo de credenciais '{CREDENTIALS_FILE}' não encontrado.")
+        return None
     try:
         creds = service_account.Credentials.from_service_account_file(
-            cred_file,
-            scopes=['https://www.googleapis.com/auth/drive.file']
+            CREDENTIALS_FILE,
+            scopes=["https://www.googleapis.com/auth/drive.file"]
         )
-        service = build('drive', 'v3', credentials=creds)
-        file_metadata = {
-            'name': os.path.basename(file_path),
-            'parents': [folder_id]
-        }
-        media = MediaFileUpload(file_path, mimetype='text/csv')
-        file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-        return file.get('id')
+        service = build("drive", "v3", credentials=creds)
+        return service
     except Exception as e:
-        raise Exception(f"Erro no upload para o Google Drive: {e}")
+        st.error(f"Erro ao conectar ao Google Drive: {e}")
+        return None
 
-# Interface do Streamlit
-st.title("App de Rentabilidade - Laboratório João Paulo")
-st.write("Envie o arquivo CSV para análise e upload para o Google Drive.")
+def listar_arquivos(service, folder_id):
+    try:
+        results = service.files().list(
+            q=f"'{folder_id}' in parents and mimeType='text/csv'",
+            pageSize=100,
+            fields="files(id, name)"
+        ).execute()
+        return results.get("files", [])
+    except Exception as e:
+        st.error(f"Erro ao listar arquivos: {e}")
+        return []
 
-# Seletor para escolher o tipo de análise
-tipo = st.selectbox("Escolha o tipo de análise:", ["Convênio - Produção", "Unidade"])
+def baixar_csv(service, file_id):
+    try:
+        request = service.files().get_media(fileId=file_id)
+        fh = BytesIO()
+        downloader = MediaIoBaseDownload(fh, request)
+        done = False
+        while not done:
+            status, done = downloader.next_chunk()
+        fh.seek(0)
+        df = pd.read_csv(fh, sep=";", encoding="latin1")
+        return df
+    except Exception as e:
+        st.error(f"Erro ao baixar arquivo: {e}")
+        return None
 
-# Checkbox para definir se deve incluir impostos
-impostos = st.checkbox("Incluir impostos no cálculo?", value=True)
+def calcular_faturamento(df):
+    if "Bruto Fat." not in df.columns:
+        st.warning("Coluna 'Bruto Fat.' não encontrada no CSV.")
+        return 0.0
+    try:
+        # Converte valores para float, tratando vírgula como separador decimal
+        df["Bruto Fat."] = df["Bruto Fat."].astype(str).str.replace(",", ".")
+        df["Bruto Fat."] = pd.to_numeric(df["Bruto Fat."], errors="coerce")
+        total = df["Bruto Fat."].sum()
+        return total
+    except Exception as e:
+        st.error(f"Erro ao calcular faturamento: {e}")
+        return 0.0
 
-# Widget para upload do arquivo CSV
-uploaded_file = st.file_uploader("Envie a planilha de produção (.csv)", type="csv")
+# Interface do app
+st.title("📊 App de Rentabilidade - Laboratório João Paulo")
+st.write("Selecione o tipo de produção e escolha um arquivo CSV do Google Drive para análise.")
 
-if uploaded_file is not None:
-    st.write("Arquivo carregado com sucesso.")
-    if st.button("Processar e Enviar"):
-        # Lê o conteúdo do arquivo em bytes
-        file_content = uploaded_file.getvalue()
-        # Processa o CSV e gera o resultado da análise
-        resultado = analisar_csv(file_content, tipo, impostos)
-        # Salva o arquivo temporariamente para fazer o upload
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
-        temp_file.write(file_content)
-        temp_file.close()
-        # Define a pasta do Google Drive com base no tipo de análise
-        if "convênio" in tipo.lower() or "convenio" in tipo.lower():
-            folder_id = "16y9sqf-9vO6GMZVTCS8MnBlVtpAmOPYW"  # Pasta Convênio
-        else:
-            folder_id = "12zGKH3GKxU4xagjEIj6aLXQzteFIJDFC"  # Pasta Unidade
-        # Tenta fazer o upload do arquivo para o Google Drive
-        try:
-            drive_file_id = upload_to_drive(temp_file.name, folder_id)
-            st.success(f"Arquivo enviado com sucesso para o Google Drive! ID do arquivo: {drive_file_id}")
-        except Exception as e:
-            st.error(str(e))
-        # Exibe o resultado da análise
-        st.write("### Resultado da Análise:")
-        st.text(resultado)
-        # Remove o arquivo temporário
-        os.remove(temp_file.name)
+tipo = st.selectbox("Tipo de Produção", ["Convênio", "Unidade"])
+
+service = conectar_drive()
+
+if service:
+    pasta_id = PASTA_CONVENIO_ID if tipo.lower() == "convênio" else PASTA_UNIDADE_ID
+    arquivos = listar_arquivos(service, pasta_id)
+    
+    if arquivos:
+        nomes = [f["name"] for f in arquivos]
+        selecionado = st.selectbox("Selecione o arquivo CSV", nomes)
+        if st.button("Analisar"):
+            file_id = next((f["id"] for f in arquivos if f["name"] == selecionado), None)
+            if file_id:
+                df = baixar_csv(service, file_id)
+                if df is not None:
+                    st.write("🔍 Prévia dos dados (primeiras 10 linhas):")
+                    st.dataframe(df.head(10))
+                    total = calcular_faturamento(df)
+                    st.success(f"💰 Total da produção (Bruto Fat.): R$ {total:,.2f}")
+            else:
+                st.error("Arquivo não encontrado.")
+    else:
+        st.warning("Nenhum arquivo CSV encontrado na pasta selecionada.")
+else:
+    st.error("Não foi possível conectar ao Google Drive. Verifique as credenciais.")
