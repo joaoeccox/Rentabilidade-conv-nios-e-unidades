@@ -45,7 +45,8 @@ def upload_to_drive(file_path, folder_id):
     Faz o upload do arquivo CSV para o Google Drive.
     Utiliza as credenciais da conta de serviço a partir do arquivo JSON.
     """
-    cred_file = 'credentials.json'  # Renomeie seu arquivo JSON para um nome simples, por exemplo, "credentials.json"
+    # Aqui usamos o nome do arquivo JSON conforme você informou
+    cred_file = 'client_secret_1044983307802-ikm8f379gvsmodbbkt09nf2oefr4mc7t.apps.googleusercontent.com (1)'
     if not os.path.exists(cred_file):
         raise Exception(f"Arquivo de credenciais '{cred_file}' não encontrado. Por favor, faça o upload do arquivo de credenciais na raiz do repositório.")
     try:
