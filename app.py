@@ -6,13 +6,12 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 
-# CONFIGURAÇÕES
-CREDENTIALS_FILE = "credentials.json"  # Arquivo de credenciais
-# IDs das pastas no Google Drive
+# Configurações
+CREDENTIALS_FILE = "credentials.json"  # Arquivo de credenciais renomeado
 PASTA_UNIDADE_ID = "12zGKH3GKxU4xagjEIj6aLXQzteFIJDFC"
 PASTA_CONVENIO_ID = "16y9sqf-9vO6GMZVTCS8MnBlVtpAmOPYW"
 
-# Função para conectar ao Google Drive
+# Conectar ao Google Drive com um escopo mais amplo
 def conectar_drive():
     if not os.path.exists(CREDENTIALS_FILE):
         st.error(f"Arquivo de credenciais '{CREDENTIALS_FILE}' não encontrado.")
@@ -20,7 +19,7 @@ def conectar_drive():
     try:
         creds = service_account.Credentials.from_service_account_file(
             CREDENTIALS_FILE,
-            scopes=["https://www.googleapis.com/auth/drive.file"]
+            scopes=["https://www.googleapis.com/auth/drive"]
         )
         service = build("drive", "v3", credentials=creds)
         return service
@@ -28,7 +27,7 @@ def conectar_drive():
         st.error(f"Erro ao conectar ao Google Drive: {e}")
         return None
 
-# Função para listar arquivos CSV em uma pasta específica
+# Lista arquivos CSV em uma pasta específica
 def listar_arquivos(service, folder_id):
     try:
         results = service.files().list(
@@ -41,7 +40,7 @@ def listar_arquivos(service, folder_id):
         st.error(f"Erro ao listar arquivos: {e}")
         return []
 
-# Função para baixar um arquivo CSV dado seu ID
+# Baixa o arquivo CSV dado seu ID e retorna um DataFrame
 def baixar_csv(service, file_id):
     try:
         request = service.files().get_media(fileId=file_id)
@@ -57,13 +56,12 @@ def baixar_csv(service, file_id):
         st.error(f"Erro ao baixar arquivo: {e}")
         return None
 
-# Função para calcular o total a partir da coluna "Bruto Fat."
+# Calcula o total a partir da coluna "Bruto Fat."
 def calcular_faturamento(df):
     if "Bruto Fat." not in df.columns:
         st.warning("Coluna 'Bruto Fat.' não encontrada no CSV.")
         return 0.0
     try:
-        # Substitui vírgulas por pontos e converte para numérico
         df["Bruto Fat."] = df["Bruto Fat."].astype(str).str.replace(",", ".")
         df["Bruto Fat."] = pd.to_numeric(df["Bruto Fat."], errors="coerce")
         total = df["Bruto Fat."].sum()
@@ -72,14 +70,12 @@ def calcular_faturamento(df):
         st.error(f"Erro ao calcular faturamento: {e}")
         return 0.0
 
-# Interface do App no Streamlit
+# Interface do app
 st.title("📊 App de Rentabilidade - Laboratório João Paulo")
-st.write("Selecione o tipo e o arquivo CSV para análise.")
+st.write("Selecione o tipo de produção e escolha um arquivo CSV do Google Drive para análise.")
 
-# Seleção do tipo (Convênio ou Unidade)
-tipo = st.selectbox("Tipo de produção", ["Convênio", "Unidade"])
+tipo = st.selectbox("Tipo de Produção", ["Convênio", "Unidade"])
 
-# Conectar ao Google Drive
 service = conectar_drive()
 
 if service:
@@ -104,4 +100,3 @@ if service:
         st.warning("Nenhum arquivo CSV encontrado na pasta selecionada.")
 else:
     st.error("Não foi possível conectar ao Google Drive. Verifique as credenciais.")
-
