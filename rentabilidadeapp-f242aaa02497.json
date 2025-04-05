@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "rentabilidadeapp",
+  "private_key_id": "f242aaa024976b92c08d36ddfbabf0a0ff53c006",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCgl8qNr2zYqcLb\n7FhdNZ4XNUGBE0moT81phSXagtcZ0eR0yIHBbYhkfQddCTzBM3/sHK2r8oGKRRfZ\nihTij0rsNBBql3cz9xb7DBfZLMqdoYB1G0/CFz1JuMCBK4DqxFgFCnemLQhtp1Lj\n/Wa8cU2SXzaqbOulyoJXrERue3ejtEmr7juOpZpXQqlt6H3/DSn2QZVJ4uc1XaOq\ns2QtY1ERFVgP97YZyN7qcmF6Ug43wyleBcQCBWkoWPUc97OmAIFfbuShmYmEOsnY\n67tq3ftSFg2iGiR7B7FNdTETXDSRpm8M5ngDbzMPKGtxTu0c1ApNtaHwSjHHwrWm\nw7XEYfKpAgMBAAECggEABkTOmxfHNbDwwpF4BJFwfaLuTunQFQIieFVCfERhvagI\nFTfzere6HIQV6r+Oz9LhEjgvXlgtztYyH2OIu6xQxiYlIugNNunVC5E2CBv7v8n7\nX/bkNuUd1xgfaZtnYaKu9elp8MJuwwsGTRCJ916r4sQVN/NfAn6EdoQquq5Wpfz2\nhx8TAr5Fs7AijNdRzkLoBS8op7rGiBItzugfS6g8tEeV0OB5IWvwR00fzswAxgp6\nzg5S0BZL3M2usaEA7yNzQJkGSpJyGQDusPhF7aM92KKn/PC0/HejX/Rqn/9fn2pS\nsj7qW9jbQ4qtdwYiQvLbwnve/Bwi2sP3Wg7FhuFqoQKBgQDbdIVqMLjByv1UyLnK\ntC5uNJb+7hA3C9LSJa77RAOQ3aEbv2yPBa/sLecsAVFjw6ZnWkuB8kYVnQKIruas\n+uXa9jfZErlKB4/G9alIF2HZ2G93Pb7LVqiUAKO8T//FWXLgwsFMAubzpUB1fgjX\nE+aH7WzzbaQkDWHyc0VYf808MQKBgQC7VfHyyHHXoFNqnNb5yFWpXCEIzE6L8+8/\nyVIkiXSHYq6w5eqxNVz/6+kv7UBAk6iYCESQ0wUapTnN4/PMvVQACt9yRMbQSoF2\noGrdAdyyyW4WJQtGnKqU8pPOVTxmiOMQi/qh4aO6+7yUlqzz7aWqEarG4QBE01aE\nzly1NnoX+QKBgQDWAqjEqOTUIAeysdj1g4cv89s4mqJ3e/FI/HTLFkW/9VJSw/ey\n9iHcWdtxv4tGlhrl+VlfTQvpsecxshbEpByZzrkh2K+XMQ6WQSWnZx4GmpoBF9bD\nZywYwRLr5rwQEa4E4Agu/zmIayQUMCegzwhmkDRKpCaI/gABt0XuCxvzUQKBgQCA\nUpL1V1CD/5KkSOMJHq1u4WjPegOj4mhULTdTR8TGqFY5XoSw9njJ5XNKHR4SHhMy\ncRdmjOXGJr+9xRPPfzD3Bnug7nOxYhfkhmYtFYV0An6iNKXQrKg8dx3ADKrfIY1I\nXFpGYSWig6XdsoiuXm9IW+m7aYyhmJJ/Tkw65SIlIQKBgBGuWnKgW9w5gYW9bUeF\nlyvFq4B28xXFVVXw1u4vhan5belakW1zWNAFHHWd5joXQW60m+hRpIWuBxdEoSZc\nx084nGjj4N/jBHPWaORlyV2bh3gW4iWqyvEA3IjfX6fWgQ/GOpWJ0TuBur8b1hVQ\nUGIfVqLIs2eiHziMeDgM/H5R\n-----END PRIVATE KEY-----\n",
+  "client_email": "app-rentabilidade-laboratorio@rentabilidadeapp.iam.gserviceaccount.com",
+  "client_id": "107055283647545332429",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/app-rentabilidade-laboratorio%40rentabilidadeapp.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
