@@ -45,8 +45,7 @@ def upload_to_drive(file_path, folder_id):
     Faz o upload do arquivo CSV para o Google Drive.
     Utiliza as credenciais da conta de serviço a partir do arquivo JSON.
     """
-cred_file = 'client_secret_1044983307802-ikm8f379gvsmodbbkt09nf2oefr4mc7t.apps.googleusercontent.com (1)'
-
+    cred_file = 'credentials.json'  # Renomeie seu arquivo JSON para um nome simples, por exemplo, "credentials.json"
     if not os.path.exists(cred_file):
         raise Exception(f"Arquivo de credenciais '{cred_file}' não encontrado. Por favor, faça o upload do arquivo de credenciais na raiz do repositório.")
     try:
@@ -80,35 +79,28 @@ uploaded_file = st.file_uploader("Envie a planilha de produção (.csv)", type="
 
 if uploaded_file is not None:
     st.write("Arquivo carregado com sucesso.")
-    
     if st.button("Processar e Enviar"):
         # Lê o conteúdo do arquivo em bytes
         file_content = uploaded_file.getvalue()
-        
         # Processa o CSV e gera o resultado da análise
         resultado = analisar_csv(file_content, tipo, impostos)
-        
         # Salva o arquivo temporariamente para fazer o upload
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
         temp_file.write(file_content)
         temp_file.close()
-        
         # Define a pasta do Google Drive com base no tipo de análise
         if "convênio" in tipo.lower() or "convenio" in tipo.lower():
             folder_id = "16y9sqf-9vO6GMZVTCS8MnBlVtpAmOPYW"  # Pasta Convênio
         else:
             folder_id = "12zGKH3GKxU4xagjEIj6aLXQzteFIJDFC"  # Pasta Unidade
-
         # Tenta fazer o upload do arquivo para o Google Drive
         try:
             drive_file_id = upload_to_drive(temp_file.name, folder_id)
             st.success(f"Arquivo enviado com sucesso para o Google Drive! ID do arquivo: {drive_file_id}")
         except Exception as e:
             st.error(str(e))
-        
         # Exibe o resultado da análise
         st.write("### Resultado da Análise:")
         st.text(resultado)
-        
         # Remove o arquivo temporário
         os.remove(temp_file.name)
