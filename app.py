@@ -46,7 +46,7 @@ def upload_to_drive(file_path, folder_id):
     Utiliza as credenciais da conta de serviço a partir do arquivo JSON.
     """
     # Aqui usamos o nome do arquivo JSON conforme você informou
-    cred_file = 'client_secret_1044983307802-ikm8f379gvsmodbbkt09nf2oefr4mc7t.apps.googleusercontent.com (1)'
+    cred_file = 'credentials.json'
     if not os.path.exists(cred_file):
         raise Exception(f"Arquivo de credenciais '{cred_file}' não encontrado. Por favor, faça o upload do arquivo de credenciais na raiz do repositório.")
     try:
