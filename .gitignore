@@ -1,6 +1,3 @@
-# Ignorar o arquivo de credenciais (mantenha-o fora do versionamento)
-rentabilidadeapp-f242aaa02497.json
-
 # Ignorar arquivos de ambiente
 .env
 
