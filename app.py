@@ -7,12 +7,9 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 
 # CONFIGURAÇÕES
-CREDENTIALS_FILE = "credentials.json"  # O arquivo de credenciais, verificado e renomeado
-# IDs das pastas no Google Drive
-# Para convênio (produção e tabela) usamos:
+CREDENTIALS_FILE = "credentials.json"  # Arquivo de credenciais (deve estar na raiz do repositório)
+PASTA_UNIDADE_ID = "12zGKH3GKxU4xagjEIj6aLXQzteFIJDFC"
 PASTA_CONVENIO_ID = "16y9sqf-9vO6GMZVTCS8MnBlVtpAmOPYW"
-# Para unidade, usamos (planilha de custo fixo da unidade)
-PASTA_UNIDADE_ID = "1K1tsKaXKQ4iq_75Y1dzK5ESl_0Wo8a8W"
 
 def conectar_drive():
     if not os.path.exists(CREDENTIALS_FILE):
@@ -21,7 +18,7 @@ def conectar_drive():
     try:
         creds = service_account.Credentials.from_service_account_file(
             CREDENTIALS_FILE,
-            scopes=["https://www.googleapis.com/auth/drive"]
+            scopes=["https://www.googleapis.com/auth/drive.file"]
         )
         service = build("drive", "v3", credentials=creds)
         return service
@@ -69,25 +66,24 @@ def calcular_faturamento(df):
         st.error(f"Erro ao calcular faturamento: {e}")
         return 0.0
 
-# Interface do App no Streamlit
+# Interface do App
 st.title("📊 App de Rentabilidade - Laboratório João Paulo")
-st.write("Selecione o tipo de análise, insira a alíquota de impostos (em %) se aplicável e escolha um arquivo CSV do Google Drive.")
+st.write("Selecione o tipo de análise, insira a alíquota de impostos (se aplicável) e escolha um arquivo CSV do Google Drive para análise.")
 
 # Seleção do tipo de análise
 tipo = st.selectbox("Tipo de Análise", ["Convênio Produção", "Convênio Tabela", "Unidade"])
 
-# Caixa de texto para inserir a alíquota de impostos (em %). Se vazio, não aplica impostos.
+# Caixa de texto para inserir alíquota de impostos (em %)
 aliquota_input = st.text_input("Digite a alíquota de impostos (%) (deixe vazio para não aplicar)", value="9.86")
 try:
     aliquota = float(aliquota_input) / 100 if aliquota_input.strip() != "" else 0.0
-except:
+except Exception:
     st.error("Alíquota de impostos inválida.")
     aliquota = 0.0
 
 service = conectar_drive()
 
 if service:
-    # Define a pasta a ser usada com base no tipo de análise
     if tipo.lower().startswith("convênio"):
         pasta_id = PASTA_CONVENIO_ID
     else:
@@ -103,15 +99,14 @@ if service:
             if file_id:
                 df = baixar_csv(service, file_id)
                 if df is not None:
-                    st.subheader("Prévia dos Dados (Primeiras 10 Linhas):")
+                    st.subheader("Prévia dos dados (Primeiras 10 Linhas):")
                     st.dataframe(df.head(10))
                     total = calcular_faturamento(df)
-                    # Se a alíquota foi informada, aplica sobre o valor faturado
                     if aliquota > 0:
                         total_com_impostos = total * (1 - aliquota)
-                        st.success(f"Total da produção (Bruto Fat.) sem impostos: R$ {total_com_impostos:,.2f}")
+                        st.success(f"Total da produção sem impostos: R$ {total_com_impostos:,.2f}")
                     else:
-                        st.success(f"Total da produção (Bruto Fat.): R$ {total:,.2f}")
+                        st.success(f"Total da produção: R$ {total:,.2f}")
             else:
                 st.error("Arquivo não encontrado.")
     else:
