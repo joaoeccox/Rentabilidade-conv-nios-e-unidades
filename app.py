@@ -7,7 +7,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 
 # CONFIGURAÇÕES
-CREDENTIALS_FILE = "credentials.json"  # Arquivo de credenciais (deve estar na raiz do repositório)
+CREDENTIALS_FILE = "credentials.json"  # Arquivo de credenciais na raiz
 PASTA_UNIDADE_ID = "12zGKH3GKxU4xagjEIj6aLXQzteFIJDFC"
 PASTA_CONVENIO_ID = "16y9sqf-9vO6GMZVTCS8MnBlVtpAmOPYW"
 
@@ -16,9 +16,10 @@ def conectar_drive():
         st.error(f"Arquivo de credenciais '{CREDENTIALS_FILE}' não encontrado.")
         return None
     try:
+        # Alteramos o escopo para acesso completo ao Drive
         creds = service_account.Credentials.from_service_account_file(
             CREDENTIALS_FILE,
-            scopes=["https://www.googleapis.com/auth/drive.file"]
+            scopes=["https://www.googleapis.com/auth/drive"]
         )
         service = build("drive", "v3", credentials=creds)
         return service
@@ -84,6 +85,7 @@ except Exception:
 service = conectar_drive()
 
 if service:
+    # Seleciona a pasta com base no tipo de análise
     if tipo.lower().startswith("convênio"):
         pasta_id = PASTA_CONVENIO_ID
     else:
